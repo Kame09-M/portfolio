@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masa — Data Scientist / Data Engineer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #050a14;
+      --surface:  #0c1524;
+      --border:   #1a2a42;
+      --accent:   #2d7fff;
+      --accent2:  #00c8ff;
+      --text:     #e2e8f0;
+      --muted:    #7a90aa;
+      --font-sans: 'Syne', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── Grid background ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(45,127,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(45,127,255,.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+
+    /* ── Utility ── */
+    .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+    a { color: inherit; text-decoration: none; }
+
+    .tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      padding: 3px 10px;
+      border: 1px solid var(--accent);
+      color: var(--accent2);
+      border-radius: 4px;
+      letter-spacing: .04em;
+      transition: background .2s;
+    }
+    .tag:hover { background: rgba(45,127,255,.12); }
+
+    /* ── Fade-in animation ── */
+    .fade { opacity: 0; transform: translateY(28px); transition: opacity .7s ease, transform .7s ease; }
+    .fade.visible { opacity: 1; transform: none; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(5,10,20,.82);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+    }
+    .nav-logo {
+      font-family: var(--font-mono);
+      font-size: 1.05rem;
+      color: var(--accent);
+      letter-spacing: .08em;
+    }
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-family: var(--font-mono);
+      font-size: .8rem;
+      color: var(--muted);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--accent2); }
+
+    /* hamburger */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .hamburger span {
+      display: block;
+      width: 24px; height: 2px;
+      background: var(--text);
+      border-radius: 2px;
+      transition: .3s;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: 60px; left: 0; right: 0;
+      background: rgba(5,10,20,.97);
+      border-bottom: 1px solid var(--border);
+      padding: 24px;
+      z-index: 99;
+    }
+    .mobile-menu.open { display: block; }
+    .mobile-menu ul { list-style: none; display: flex; flex-direction: column; gap: 20px; }
+    .mobile-menu a {
+      font-family: var(--font-mono);
+      font-size: .9rem;
+      color: var(--muted);
+      letter-spacing: .06em;
+    }
+    .mobile-menu a:hover { color: var(--accent2); }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding-top: 60px;
+      position: relative;
+    }
+    .hero-content { position: relative; z-index: 1; }
+
+    .hero-eyebrow {
+      font-family: var(--font-mono);
+      font-size: .8rem;
+      color: var(--accent);
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .hero-eyebrow::before { content: '> '; }
+
+    h1 {
+      font-size: clamp(3rem, 8vw, 7rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -.02em;
+      background: linear-gradient(135deg, #fff 30%, var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 18px;
+    }
+
+    .hero-subtitle {
+      font-family: var(--font-mono);
+      font-size: clamp(.9rem, 2vw, 1.15rem);
+      color: var(--muted);
+      margin-bottom: 48px;
+      letter-spacing: .04em;
+    }
+    .hero-subtitle span { color: var(--accent2); }
+
+    .hero-cta { display: flex; gap: 16px; flex-wrap: wrap; }
+
+    .btn {
+      font-family: var(--font-mono);
+      font-size: .82rem;
+      letter-spacing: .06em;
+      padding: 12px 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all .25s;
+      text-transform: uppercase;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: 1px solid var(--accent);
+    }
+    .btn-primary:hover {
+      background: transparent;
+      color: var(--accent2);
+      border-color: var(--accent2);
+      box-shadow: 0 0 20px rgba(0,200,255,.2);
+    }
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-outline:hover {
+      border-color: var(--accent);
+      color: var(--accent2);
+      box-shadow: 0 0 20px rgba(45,127,255,.15);
+    }
+
+    /* glow blob */
+    .hero-glow {
+      position: absolute;
+      top: 50%; left: 60%;
+      transform: translate(-50%, -50%);
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(45,127,255,.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ── Sections shared ── */
+    section { padding: 120px 0; position: relative; z-index: 1; }
+
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      color: var(--accent);
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .section-label::before { content: '// '; }
+
+    h2 {
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 700;
+      margin-bottom: 56px;
+      color: #fff;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0;
+    }
+
+    /* ── ABOUT ── */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+    .about-text p {
+      color: var(--muted);
+      font-size: 1rem;
+      margin-bottom: 16px;
+    }
+    .about-text strong { color: var(--text); }
+
+    .about-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      transition: border-color .25s, box-shadow .25s;
+    }
+    .stat-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 24px rgba(45,127,255,.1);
+    }
+    .stat-label {
+      font-family: var(--font-mono);
+      font-size: .7rem;
+      color: var(--accent);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .stat-value { font-size: 1rem; font-weight: 600; }
+
+    /* ── RESEARCH ── */
+    .research-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 36px;
+      transition: border-color .3s, box-shadow .3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .research-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+      border-radius: 3px 0 0 3px;
+    }
+    .research-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 8px 40px rgba(45,127,255,.12);
+    }
+
+    .research-badge {
+      font-family: var(--font-mono);
+      font-size: .68rem;
+      color: var(--accent2);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .research-card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #fff;
+      line-height: 1.4;
+    }
+    .research-card p {
+      color: var(--muted);
+      font-size: .95rem;
+      margin-bottom: 24px;
+    }
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    /* ── EXPERIENCE ── */
+    .exp-list { display: flex; flex-direction: column; gap: 2px; }
+
+    .exp-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 28px 32px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px 32px;
+      align-items: start;
+      transition: border-color .25s, box-shadow .25s;
+      margin-bottom: 12px;
+    }
+    .exp-item:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 28px rgba(45,127,255,.1);
+    }
+    .exp-company {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .exp-role {
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      color: var(--accent2);
+      letter-spacing: .04em;
+      margin-bottom: 10px;
+    }
+    .exp-desc {
+      font-size: .9rem;
+      color: var(--muted);
+    }
+    .exp-period {
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      color: var(--muted);
+      white-space: nowrap;
+      text-align: right;
+      padding-top: 3px;
+    }
+
+    .exp-links { margin-top: 48px; display: flex; gap: 16px; flex-wrap: wrap; }
+    .link-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 16px;
+      transition: all .2s;
+    }
+    .link-chip:hover { color: var(--accent2); border-color: var(--accent); }
+    .link-chip svg { width: 14px; height: 14px; fill: currentColor; }
+
+    /* ── CONTACT ── */
+    #contact { text-align: center; }
+    #contact h2 { margin-bottom: 16px; }
+    #contact p { color: var(--muted); margin-bottom: 40px; max-width: 480px; margin-left: auto; margin-right: auto; }
+    .contact-email {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      color: var(--accent2);
+      border-bottom: 1px solid var(--accent);
+      padding-bottom: 2px;
+      transition: opacity .2s;
+    }
+    .contact-email:hover { opacity: .7; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+      position: relative;
+      z-index: 1;
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .footer-copy {
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      color: var(--muted);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .hamburger { display: flex; }
+
+      .about-grid { grid-template-columns: 1fr; gap: 32px; }
+
+      .exp-item {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .exp-period { text-align: left; }
+
+      section { padding: 80px 0; }
+    }
+
+    @media (max-width: 480px) {
+      h1 { font-size: 2.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="container nav-inner">
+      <span class="nav-logo">masa.dev</span>
+      <ul class="nav-links">
+        <li><a href="#about">About</a></li>
+        <li><a href="#research">Research</a></li>
+        <li><a href="#experience">Experience</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+      <div class="hamburger" id="hamburger" aria-label="メニュー" role="button" tabindex="0">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="#about" class="mobile-link">About</a></li>
+      <li><a href="#research" class="mobile-link">Research</a></li>
+      <li><a href="#experience" class="mobile-link">Experience</a></li>
+      <li><a href="#contact" class="mobile-link">Contact</a></li>
+    </ul>
+  </div>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-glow"></div>
+    <div class="container hero-content">
+      <p class="hero-eyebrow fade">Welcome to my portfolio</p>
+      <h1 class="fade">Masa</h1>
+      <p class="hero-subtitle fade">
+        <span>Data Scientist</span> / <span>Data Engineer</span>
+      </p>
+      <div class="hero-cta fade">
+        <a href="#about" class="btn btn-primary">About Me</a>
+        <a href="#experience" class="btn btn-outline">View Works</a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="container">
+      <p class="section-label fade">About</p>
+      <h2 class="fade">Who I Am</h2>
+      <div class="about-grid">
+        <div class="about-text fade">
+          <p>
+            会津大学大学院 <strong>修士1年</strong>。
+            計算社会科学研究室に所属し、SNS上の情報拡散・偽情報検出をテーマとした研究に取り組んでいます。
+          </p>
+          <p>
+            機械学習・NLPを中心に、データ分析基盤の設計・実装まで幅広くカバー。
+            インターンシップではdbt・BigQueryを用いたELTパイプライン構築や、
+            ReactとGoを活用したWebサービス開発も経験しています。
+          </p>
+          <p>
+            志望は <strong>IT事業会社のデータサイエンティスト・データアナリスト職</strong>。
+            データを通じてプロダクトや意思決定に直接貢献したいと考えています。
+          </p>
+        </div>
+        <div class="about-stats fade">
+          <div class="stat-card">
+            <div class="stat-label">University</div>
+            <div class="stat-value">会津大学大学院 M1</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Lab</div>
+            <div class="stat-value">計算社会科学研究室</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Target Role</div>
+            <div class="stat-value">Data Scientist / Data Analyst</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Interests</div>
+            <div class="stat-value">NLP · MLOps · Data Engineering</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- RESEARCH -->
+  <section id="research">
+    <div class="container">
+      <p class="section-label fade">Research</p>
+      <h2 class="fade">Research Work</h2>
+      <div class="research-card fade">
+        <div class="research-badge">NEDO 経済安全保障重要技術育成プログラム</div>
+        <h3>X（旧Twitter）上の偽情報ナラティブ<br>自動クラスタリングシステムの構築</h3>
+        <p>
+          OpenAI言語モデルを用いてツイートをベクトル化し、UMAP + HDBSCANによる次元削減・クラスタリングパイプラインを設計・実装。
+          複数のアルゴリズムとハイパーパラメータを系統的に比較検証し、偽情報ナラティブの自動分類精度を向上させた。
+          scikit-learnを活用した評価フレームワークも構築し、再現性のあるML実験基盤を整備。
+        </p>
+        <div class="tags">
+          <span class="tag">Python</span>
+          <span class="tag">OpenAI API</span>
+          <span class="tag">HDBSCAN</span>
+          <span class="tag">UMAP</span>
+          <span class="tag">scikit-learn</span>
+          <span class="tag">NLP</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- EXPERIENCE -->
+  <section id="experience">
+    <div class="container">
+      <p class="section-label fade">Experience</p>
+      <h2 class="fade">Work Experience</h2>
+      <div class="exp-list">
+
+        <div class="exp-item fade">
+          <div>
+            <div class="exp-company">Geniee</div>
+            <div class="exp-role">Software Engineer Intern</div>
+            <div class="exp-desc">
+              React・Go・PostgreSQL・Dockerを使用したWebサービス開発に従事。
+              短期間で実務環境へのキャッチアップを経験。
+            </div>
+            <div class="tags" style="margin-top:12px;">
+              <span class="tag">React</span>
+              <span class="tag">Go</span>
+              <span class="tag">PostgreSQL</span>
+              <span class="tag">Docker</span>
+            </div>
+          </div>
+          <div class="exp-period">Apr 2026<br>2 days</div>
+        </div>
+
+        <div class="exp-item fade">
+          <div>
+            <div class="exp-company">Yappli</div>
+            <div class="exp-role">Data Science Intern</div>
+            <div class="exp-desc">
+              dbt CoreとBigQueryを活用したELTパイプラインの設計・構築、
+              Looker Studioによるモニタリングダッシュボード開発を担当。
+              データ品質管理と自動化フローの整備にも貢献。
+            </div>
+            <div class="tags" style="margin-top:12px;">
+              <span class="tag">dbt Core</span>
+              <span class="tag">BigQuery</span>
+              <span class="tag">Looker Studio</span>
+              <span class="tag">ELT</span>
+            </div>
+          </div>
+          <div class="exp-period">Jan–Feb 2026</div>
+        </div>
+
+        <div class="exp-item fade">
+          <div>
+            <div class="exp-company">業務委託</div>
+            <div class="exp-role">AI Automation Engineer</div>
+            <div class="exp-desc">
+              LLMを活用した業務自動化システムの設計・実装。
+              クライアントの業務フローを分析し、AI活用によるプロセス効率化を推進。
+              技術ブログでの発信も継続中。
+            </div>
+            <div class="tags" style="margin-top:12px;">
+              <span class="tag">LLM</span>
+              <span class="tag">Python</span>
+              <span class="tag">Automation</span>
+            </div>
+          </div>
+          <div class="exp-period">Ongoing</div>
+        </div>
+
+      </div>
+
+      <div class="exp-links fade">
+        <a href="https://qiita.com/DS_kame9" class="link-chip" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+          Tech Blog
+        </a>
+        <a href="https://github.com/Kame09-M" class="link-chip" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="container">
+      <p class="section-label fade">Contact</p>
+      <h2 class="fade">Get In Touch</h2>
+      <p class="fade">
+        インターンシップや就職のご相談、研究に関するお問い合わせなど、
+        お気軽にご連絡ください。
+      </p>
+      <a href="mailto:your@email.com" class="contact-email fade">masa.s042611@gmail.com</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container footer-inner">
+      <span class="footer-copy">© 2026 Masa. All rights reserved.</span>
+      <span class="footer-copy" style="font-family:var(--font-sans);">Built with HTML + CSS</span>
+    </div>
+  </footer>
+
+  <script>
+    // Hamburger menu
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobileMenu');
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('open');
+      mobileMenu.classList.toggle('open');
+    });
+    document.querySelectorAll('.mobile-link').forEach(link => {
+      link.addEventListener('click', () => {
+        hamburger.classList.remove('open');
+        mobileMenu.classList.remove('open');
+      });
+    });
+
+    // IntersectionObserver fade-in
+    const observer = new IntersectionObserver(
+      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+      { threshold: 0.12 }
+    );
+    document.querySelectorAll('.fade').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
