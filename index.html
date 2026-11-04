@@ -154,6 +154,7 @@
       align-items: center;
       padding-top: 60px;
       position: relative;
+      overflow: hidden;
     }
     .hero-content { position: relative; z-index: 1; }
 
@@ -230,6 +231,14 @@
       width: 600px; height: 600px;
       background: radial-gradient(circle, rgba(45,127,255,.12) 0%, transparent 70%);
       pointer-events: none;
+    }
+    .hero-network {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      -webkit-mask-image: radial-gradient(ellipse at 60% 50%, #000 35%, transparent 80%);
+              mask-image: radial-gradient(ellipse at 60% 50%, #000 35%, transparent 80%);
     }
 
     /* ── Sections shared ── */
@@ -580,6 +589,7 @@
   <!-- HERO -->
   <section id="hero">
     <div class="hero-glow"></div>
+    <canvas class="hero-network" id="heroNetwork" aria-hidden="true"></canvas>
     <div class="container hero-content">
       <p class="hero-eyebrow fade">Welcome to my portfolio</p>
       <h1 class="fade">Masa</h1>
@@ -612,10 +622,6 @@
             ReactとGoを活用したWebサービス開発も経験しています。
             さらに、事業課題に対するデータ分析や社内アプリへのAIエージェント組み込みに携わり、
             現在は研究員として偽情報対策の研究にも取り組んでいます。
-          </p>
-          <p>
-            志望は <strong>IT事業会社のデータサイエンティスト・データアナリスト職</strong>。
-            データを通じてプロダクトや意思決定に直接貢献したいと考えています。
           </p>
         </div>
         <div class="about-stats fade">
@@ -896,6 +902,110 @@
       { threshold: 0.12 }
     );
     document.querySelectorAll('.fade').forEach(el => observer.observe(el));
+
+    // Hero network graph (nodes drift, edges link nearby nodes, pulses propagate along edges)
+    (() => {
+      const canvas = document.getElementById('heroNetwork');
+      const hero = document.getElementById('hero');
+      const ctx = canvas.getContext('2d');
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const LINK_DIST = 170;
+      let w, h, nodes = [], pulses = [], running = false, lastSpawn = 0;
+
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        w = hero.clientWidth; h = hero.clientHeight;
+        canvas.width = w * dpr; canvas.height = h * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const count = Math.round(Math.min(110, Math.max(36, (w * h) / 10000)));
+        nodes = Array.from({ length: count }, () => ({
+          x: Math.random() * w, y: Math.random() * h,
+          vx: (Math.random() - .5) * .25, vy: (Math.random() - .5) * .25,
+          r: Math.random() < .12 ? 2.6 : 1.4, heat: 0
+        }));
+        pulses = [];
+      }
+
+      function neighbors(i) {
+        const a = nodes[i], out = [];
+        nodes.forEach((b, j) => {
+          if (j !== i && Math.hypot(a.x - b.x, a.y - b.y) < LINK_DIST) out.push(j);
+        });
+        return out;
+      }
+
+      // Start a diffusion cascade from a random hub-like node
+      function spawnPulse(from, depth) {
+        const next = neighbors(from);
+        if (!next.length) return;
+        const to = next[Math.floor(Math.random() * next.length)];
+        pulses.push({ from, to, t: 0, depth });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        for (let i = 0; i < nodes.length; i++) {
+          for (let j = i + 1; j < nodes.length; j++) {
+            const a = nodes[i], b = nodes[j];
+            const d = Math.hypot(a.x - b.x, a.y - b.y);
+            if (d < LINK_DIST) {
+              ctx.strokeStyle = `rgba(45,127,255,${(1 - d / LINK_DIST) * .4})`;
+              ctx.lineWidth = 1;
+              ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+            }
+          }
+        }
+        pulses.forEach(p => {
+          const a = nodes[p.from], b = nodes[p.to];
+          const x = a.x + (b.x - a.x) * p.t, y = a.y + (b.y - a.y) * p.t;
+          ctx.strokeStyle = 'rgba(0,200,255,.55)';
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(x, y); ctx.stroke();
+          ctx.fillStyle = '#00c8ff';
+          ctx.beginPath(); ctx.arc(x, y, 1.8, 0, Math.PI * 2); ctx.fill();
+        });
+        nodes.forEach(n => {
+          ctx.fillStyle = n.heat > 0
+            ? `rgba(0,200,255,${.5 + n.heat * .5})`
+            : 'rgba(122,144,170,.6)';
+          ctx.beginPath(); ctx.arc(n.x, n.y, n.r + n.heat * 1.6, 0, Math.PI * 2); ctx.fill();
+        });
+      }
+
+      function step(now) {
+        if (!running) return;
+        nodes.forEach(n => {
+          n.x += n.vx; n.y += n.vy;
+          if (n.x < 0 || n.x > w) n.vx *= -1;
+          if (n.y < 0 || n.y > h) n.vy *= -1;
+          n.heat = Math.max(0, n.heat - .012);
+        });
+        pulses = pulses.filter(p => {
+          p.t += .025;
+          if (p.t < 1) return true;
+          nodes[p.to].heat = 1;
+          if (p.depth > 0) {
+            spawnPulse(p.to, p.depth - 1);
+            if (Math.random() < .35) spawnPulse(p.to, p.depth - 1);
+          }
+          return false;
+        });
+        if (now - lastSpawn > 2600 && pulses.length < 12) {
+          spawnPulse(Math.floor(Math.random() * nodes.length), 4);
+          lastSpawn = now;
+        }
+        draw();
+        requestAnimationFrame(step);
+      }
+
+      resize();
+      window.addEventListener('resize', () => { resize(); if (!running) draw(); });
+      if (reduceMotion) { draw(); return; }
+      // Animate only while the hero is on screen
+      new IntersectionObserver(([e]) => {
+        if (e.isIntersecting && !running) { running = true; requestAnimationFrame(step); }
+        else if (!e.isIntersecting) running = false;
+      }).observe(hero);
+    })();
   </script>
 </body>
 </html>
